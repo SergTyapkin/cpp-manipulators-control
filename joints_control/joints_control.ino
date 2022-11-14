@@ -78,6 +78,9 @@ void setup() {
       exit(ERR_SET_MAX_JOINT_VELOCITY);
     }
   }
+
+  pos positions[] = {2048, 2048, 2048, 2048, 512, 512};
+  setJointsPositions(positions);
 }
 
 
@@ -90,13 +93,12 @@ void loop() {
 
   readAllJointsPositions(actualJointsPositions);
   printPositions(actualJointsPositions);
-  
-  pos positions[] = {2048, 2048, 2048, 2048, 512, 512};
-  setJointsPositions(positions);
-  
-  delay(20);
-}
 
+  handleKeyboardControls();
+
+  delay(20);
+} 
+  
 
 // ------- Set positions functions --------
 void setJointsPositions(pos* jointsPositions) {
@@ -110,7 +112,7 @@ void setJointsPositions(pos* jointsPositions) {
   }
 }
 
-void setJointPosition(id idx, pos position) {
+void setJointPosition(index idx, pos position) {
   const char* log;
   bool result;
   result = dxl.goalPosition(idx, position, &log);
@@ -147,4 +149,42 @@ void printPositions(pos* list) {
     Serial.print(" ");
   }
   Serial.println("");
+}
+
+
+// ------- Computer keyboard handling --------
+void handleKeyboardControls() {
+  const STEP = 5;
+  
+  char key;
+  static bool isLedLighting = false;
+  static index selectedJoint = 1;
+  
+  if (Serial.available()) {
+    key = Serial.read(); // get pressed key from serial port
+
+    switch (key) {
+      case 'l': // toggle LED state
+        if (isLedLighting)
+          digitalWrite(13, LOW);
+        else
+          digitalWrite(13, HIGH);
+        isLedLighting = !isLedLighting;
+        break;
+      case 'w': // move joint in '+' direction
+        pos currentJointPos = actualJointsPositions[selectedJoint - 1];
+        setJointPosition(selectedJoint, currentJointPos + STEP);
+        break;
+      case 's': // move joint in '-' direction
+        pos currentJointPos = actualJointsPositions[selectedJoint - 1];
+        setJointPosition(selectedJoint, currentJointPos - STEP);
+        break;
+      default:
+        if (key > '0' && key <= '0' + JOINTS_COUNT) { // select joint by index
+          selectedJoint = key - '0';
+          Serial.print("You selected joint ");
+          Serial.println(selectedJoint);
+        }
+    }
+  }
 }
