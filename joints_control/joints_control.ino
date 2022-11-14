@@ -86,19 +86,19 @@ void setup() {
 
 void loop() {
   // --- Led blinking
-//  digitalWrite(LED_BUILTIN, HIGH);
-//  delay(1000);
-//  digitalWrite(LED_BUILTIN, LOW);
-//  delay(1000);
+  //  digitalWrite(LED_BUILTIN, HIGH);
+  //  delay(1000);
+  //  digitalWrite(LED_BUILTIN, LOW);
+  //  delay(1000);
 
   readAllJointsPositions(actualJointsPositions);
-  printPositions(actualJointsPositions);
+  printPositionsIfChanged(actualJointsPositions);
 
   handleKeyboardControls();
 
   delay(20);
-} 
-  
+}
+
 
 // ------- Set positions functions --------
 void setJointsPositions(pos* jointsPositions) {
@@ -133,7 +133,7 @@ void readAllJointsPositions(pos* targetList) {
     Serial.println("Failed to read position of joints");
     exit(ERR_READ_JOINT_POS);
   }
-  
+
   result = dxl.getSyncReadData(jointIdx, targetList, &log);
   if (result == false) {
     Serial.println(log);
@@ -142,10 +142,54 @@ void readAllJointsPositions(pos* targetList) {
   }
 }
 
-void printPositions(pos* list) {
+
+// ------- Print positions functions --------
+void printPositions(const pos* list) {
   Serial.print("[ POS ]: ");
-  for (index jointIdx = 1, l = list; jointIdx <= JOINTS_COUNT; jointIdx++, l++) {
-    Serial.print(l);
+  for (index i = 0, l = list; i < JOINTS_COUNT; i++, l++) {
+    Serial.print(*l);
+    Serial.print(" ");
+  }
+  Serial.println("");
+}
+
+void printPositionsIfChanged(const pos* list) {
+  static pos* prevPositions[JOINTS_COUNT];
+  static bool isInitialized = false;
+
+  // copy actual positions to "prevPositions". Only 1 time
+  if (!isInitialized) {
+    for (index i = 0, l = list, p = prevPositions; i < JOINTS_COUNT; i++, l++, p++) {
+      *p = *l;
+    }
+    isInitialized = true;
+    return;
+  }
+
+  // check if some position changed
+  bool isChanged = false;
+  for (index i = 0, l = list, p = prevPositions; i < JOINTS_COUNT; i++, l++, p++) {
+    if (*p != *l) {
+      isChanged = true;
+      break;
+    }
+  }
+
+  // if not changed - not print
+  if (!isChanged)
+    return;
+
+  // print positions and copy changed
+  Serial.print("[ POS ]: ");
+  for (index i = 0, l = list, p = prevPositions; i < JOINTS_COUNT; i++, l++, p++) {
+    if (*p != *l) {
+      Serial.print("<");
+      Serial.print(*l);
+      Serial.print("> ");
+      *p = *l;
+      continue;
+    }
+    Serial.print(*l);
     Serial.print(" ");
   }
   Serial.println("");
@@ -155,11 +199,11 @@ void printPositions(pos* list) {
 // ------- Computer keyboard handling --------
 void handleKeyboardControls() {
   const STEP = 5;
-  
+
   char key;
   static bool isLedLighting = false;
   static index selectedJoint = 1;
-  
+
   if (Serial.available()) {
     key = Serial.read(); // get pressed key from serial port
 
