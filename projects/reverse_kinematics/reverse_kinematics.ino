@@ -1,28 +1,56 @@
 #include <Basics.h>
 #include <Kinematics.h>
 
-pos newPositions[JOINTS_COUNT];
+#define SIDE 25  // TRAJECTORY_SQUARE_SIDE_LENGTH
+#define TRAJECTORY_KEYPOINTS_COUNT 8
+
+pos trajectory[TRAJECTORY_KEYPOINTS_COUNT][JOINTS_COUNT];
 void setup() {
-  setup_basic();
+  SETUP();
 
-  pos positions[JOINTS_COUNT] = {2048, 2048, 2048, 2048, 512, 512};
+  pos positions[JOINTS_COUNT] = {180, 180, 180, 180, 180, 170};
   setAllJointsPositions(positions);
+  delay(20);
 
-
-  getAnglesByTargetPoint(200, 300, 200, positions, newPositions);
-  FOR_JOINTS_IDX(i) {
-    Serial.print(i, ": ", newPositions[i]);
+  getAnglesByTargetPoint( SIDE,  SIDE, 3,  positions, trajectory[0]);
+  getAnglesByTargetPoint( 0   ,  SIDE, 30, positions, trajectory[1]);
+  getAnglesByTargetPoint(-SIDE,  SIDE, 3,  positions, trajectory[2]);
+  getAnglesByTargetPoint(-SIDE,  0   , 30, positions, trajectory[3]);
+  getAnglesByTargetPoint(-SIDE, -SIDE, 3,  positions, trajectory[4]);
+  getAnglesByTargetPoint( 0   , -SIDE, 30, positions, trajectory[5]);
+  getAnglesByTargetPoint( SIDE, -SIDE, 3,  positions, trajectory[6]);
+  getAnglesByTargetPoint( SIDE,  0   , 30, positions, trajectory[7]);
+  for (unsigned i = 0; i < TRAJECTORY_KEYPOINTS_COUNT; i++) {
+    Serial.print("----[[[");
+    Serial.print(i);
+    Serial.println("]]]----");
+    FOR_JOINTS_IDX(c) {
+      Serial.print("[");
+      Serial.print(c);
+      Serial.print("]: ");
+      Serial.print(trajectory[i][c]);
+      Serial.print(" ");
+    }
+    Serial.println();
   }
-  Serial.println("Is that ok? Press Enter to set this positions");
+  Serial.println();
+  Serial.println("Is that ok? Press Enter to go on this trajectory");
 }
 
 
+unsigned nextTrajectoryPointIdx = 0;
 void loop() {
-  loop_readPrintJointsStats();
+  LOOP_PRINT_STATS();
   
-  ON_ENTER_SECTION {
-    ON_ENTER(1) {
-      setAllJointsPositions(newPositions); // set gotten positions
+  ENTER_SECTION {
+    ON_ANY_ENTER {
+      Serial.println("PRESSED KEY ");
+      Serial.println(nextTrajectoryPointIdx);
+      setAllJointsPositions(trajectory[nextTrajectoryPointIdx]);
+      nextTrajectoryPointIdx++;
+      if (nextTrajectoryPointIdx >= TRAJECTORY_KEYPOINTS_COUNT) {
+        nextTrajectoryPointIdx -= TRAJECTORY_KEYPOINTS_COUNT;
+      }
     }
   }
   

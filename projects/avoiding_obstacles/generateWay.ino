@@ -14,7 +14,7 @@ bool findBlockAndLineIntersections(const float* lineStart, const float* lineEnd,
   float dz = (lineStart[2] - lineEnd[2]);
   // Нормирование вектора, чтобы его длина была равна deltaLength
   const float lineLength = sqrt(pow(dx, 2) + pow(dy, 2) + pow(dz, 2));
-  const float coeff = len / deltaLength;
+  const float coeff = lineLength / deltaLength;
   dx /= coeff;
   dy /= coeff;
   dz /= coeff;
@@ -88,9 +88,9 @@ float** generateWay(const float* start, const float* end, float** &way, unsigned
     unsigned minVertexIdx1;
     unsigned minVertexIdx2;
     for (unsigned i = 0; i < 8; i++) {
-      const float x = vectices[i][0];
-      const float y = vectices[i][1];
-      const float z = vectices[i][2];
+      const float x = vertices[i][0];
+      const float y = vertices[i][1];
+      const float z = vertices[i][2];
       const float dist1 = sqrt(pow(x - point1[0], 2) + pow(y - point1[1], 2) + pow(z - point1[2], 2));
       const float dist2 = sqrt(pow(x - point2[0], 2) + pow(y - point2[1], 2) + pow(z - point2[2], 2));
 
@@ -104,10 +104,10 @@ float** generateWay(const float* start, const float* end, float** &way, unsigned
       }
     }
 
-    #define i1 minVectexIdx1
-    #define i2 minVectexIdx2
-    #define i1Coord(dir_idx) vertices[minVectexIdx1][dir_idx]
-    #define i2Coord(dir_idx) vertices[minVectexIdx2][dir_idx]
+    #define i1 minVertexIdx1
+    #define i2 minVertexIdx2
+    const float* i1Coord = vertices[minVertexIdx1];
+    const float* i2Coord = vertices[minVertexIdx2];
     #define indexesIs(idx1, idx2) (min(i1, i2) == idx1 && max(i1, i2) == idx2)
     // Есть три варианта.
     // 1. Это одна и та же точка. i1 = i2
@@ -127,18 +127,18 @@ float** generateWay(const float* start, const float* end, float** &way, unsigned
       way[1][1] = i1Coord[1];
       way[1][2] = i1Coord[2];
       
-      unsigned centralVerticeIdx;
+      unsigned centralVertexIdx;
       if (indexesIs(0, 7))
-        centralVerticeIdx = 4;
-      else if (indexesIs(1, 6)
-        centralVerticeIdx = 5;
-      else if (indexesIs(3, 4)
-        centralVerticeIdx = 7;
+        centralVertexIdx = 4;
+      else if (indexesIs(1, 6))
+        centralVertexIdx = 5;
+      else if (indexesIs(3, 4))
+        centralVertexIdx = 7;
       else // (2, 5)
-        centralVerticeIdx = 6;
-      way[2][0] = vertices[centralVerticeIdx][0];
-      way[2][1] = vertices[centralVerticeIdx][1];
-      way[2][2] = vertices[centralVerticeIdx][2];
+        centralVertexIdx = 6;
+      way[2][0] = vertices[centralVertexIdx][0];
+      way[2][1] = vertices[centralVertexIdx][1];
+      way[2][2] = vertices[centralVertexIdx][2];
       
       way[3][0] = i2Coord[0];
       way[3][1] = i2Coord[1];

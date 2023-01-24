@@ -1,23 +1,8 @@
 #include <Basics.h>
 
 
-#define STEP 20
-#define SPEED_STEP 10.0  // DPS
-#define SPEED_INIT 10.0  // DPS
-
-
-
 void setup() {
   SETUP();
-
-  FOR_JOINTS_ID(i) {
-    setJointVelocityDPS(i, SPEED_INIT); 
-  }
-  delay(20);
-  
-  pos positions[] = {180, 180, 180, 180, 90, 170};
-  setAllJointsPositions(positions);
-  delay(20);
 }
 
 
@@ -33,7 +18,6 @@ void loop() {
 // ------- Computer keyboard handling --------
 void handleKeyboardControls() {
   #define STEP 20
-  #define SPEED_STEP 1
 
   char key;
   static bool isLedLighting = false;
@@ -47,7 +31,6 @@ void handleKeyboardControls() {
     Serial.println(int(key));
 
     pos currentJointPos = actualJointsPositions[selectedJoint - 1];
-    float currentJointSpeed = actualJointsVelocityDPS[selectedJoint - 1];
     switch (key) {
       case 'l': // toggle LED state
         if (isLedLighting)
@@ -61,18 +44,6 @@ void handleKeyboardControls() {
         break;
       case 's': // move joint in '-' direction
         setJointPosition(selectedJoint, currentJointPos - STEP);
-        break;
-      case 'e': // enable joint torque
-        enable(selectedJoint);
-        break;
-      case 'd': // disable joint torque
-        disable(selectedJoint);
-        break;
-      case '=': // plus speed limit
-        setJointVelocityDPS(selectedJoint, currentJointSpeed + SPEED_STEP);
-        break;
-      case '-': // minus speed limit
-        setJointVelocityDPS(selectedJoint, currentJointSpeed - SPEED_STEP);
         break;
       default:
         if (key > '0' && key <= '0' + JOINTS_COUNT) { // select joint by index
