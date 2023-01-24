@@ -4,11 +4,11 @@
 
 
 #define OBSTACLES_COUNT 1
-const float obstacles[OBSTACLES_COUNT][2][3] = {{{50, 0, 0}, {100, 50, 400}}};
+const float obstacles[OBSTACLES_COUNT][2][3] = {{{-25, -25, -20}, {25, 25, 0}}};
 
+const float startCoords[] = {30, 30, -5};
+const float endCoords[] = {-30, -30, -5};
 
-const float startCoords[] = {50, 100, 20};
-const float endCoords[] = {100, -100, 100};
 pos startPositions[JOINTS_COUNT] = {};
 pos endPositions[JOINTS_COUNT] = {};
 
