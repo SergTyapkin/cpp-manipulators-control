@@ -3,6 +3,9 @@
 //using namespace std;
 
 
+#define _WEIGHT_FOR_PENALTIES 10
+
+
 float rad(float deg) {
   return deg / POS_MAX * 2 * M_PI;
 }
@@ -67,7 +70,7 @@ float _penaltySum(const float* phi) {
   return res;
 }
 float _targetFunction(const float* phi, float xy0, float z0) {
-  return _delta(phi, xy0, z0) + _penaltySum(phi);
+  return _delta(phi, xy0, z0) + _WEIGHT_FOR_PENALTIES * _penaltySum(phi);
 }
 
 // ------

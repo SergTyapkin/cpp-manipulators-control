@@ -3,7 +3,8 @@
 
 Dynamixel2Arduino dxl(DXL_SERIAL, DXL_DIR_PIN);
 pos actualJointsPositions[JOINTS_COUNT];
-float actualJointsVelocityDPS[JOINTS_COUNT];
+float actualJointsSpeedsDPS[JOINTS_COUNT];
+float actualJointsCurrents[JOINTS_COUNT];
 
 
 // ------- Default function --------
@@ -23,64 +24,94 @@ void SETUP() {
   FOR_JOINTS_ID(jointId) {
     result = dxl.ping(jointId);
     if (result == false) {
-      Serial.print("Failed to ping joint ID: ");
-      Serial.println(jointId);
+      PRINT_SETUP("Failed to ping joint ID: ");
+      PRINT_SETUPln(jointId);
       exit(ERR_INIT_JOINT);
     }
-    Serial.print("Succeeded to ping. ");
-    Serial.print("id: [");
-    Serial.print(jointId);
+    PRINT_SETUP("Succeeded to ping. ");
+    PRINT_SETUP("id: [");
+    PRINT_SETUP(jointId);
 
     uint16_t modelNumber = dxl.getModelNumber(jointId);
-    Serial.print("] ModelNumber : ");
-    Serial.println(modelNumber);
+    PRINT_SETUP("] ModelNumber : ");
+    PRINT_SETUPln(modelNumber);
 
     result = dxl.setOperatingMode(jointId, OP_POSITION);
     if (result == false) {
-      Serial.println(F("Failed to set position mode"));
+      PRINT_SETUPln(F("Failed to set position mode"));
       exit(ERR_SET_JOINT_MODE);
     }
 
-    // --- Limit the maximum velocity in Position Control Mode. Use 0 to Max speed
-    float speed = MAX_JOINT_VELOCITY_PERCENT;
+    // --- Limit the maximum Speed in Position Control Mode. Use 0 to Max speed
+    float speed = MAX_JOINT_Speed_PERCENT;
     if (jointId == 1)
       speed *= 2;
     result = dxl.setGoalVelocity(jointId, speed, UNIT_PERCENT);
     if (result == false) {
-      Serial.print(F("Failed to set max velocity of joint ID: "));
-      Serial.println(jointId);
-      exit(ERR_SET_MAX_JOINT_VELOCITY);
+      PRINT_SETUP(F("Failed to set max Speed of joint ID: "));
+      PRINT_SETUPln(jointId);
+      exit(ERR_SET_MAX_JOINT_Speed);
     }
   }
-  Serial.println();
+  PRINT_SETUPln();
+
+  #ifdef GRAPH_MODE
+    FOR_JOINTS_ID(i) {
+      Serial.print("Pos[");
+      Serial.print(i);
+      Serial.print("] ");
+    }
+    FOR_JOINTS_ID(i) {
+      Serial.print("Spd[");
+      Serial.print(i);
+      Serial.print("] ");
+    }
+//    FOR_JOINTS_ID(i) {
+//      Serial.print("Cur[");
+//      Serial.print(i);
+//      Serial.print("] ");
+//    }
+    Serial.println();
+  #endif
 }
 
-void LOOP_PRINT_STATS() {
+void LOOP_UPDATE_ACTUALS() {
   readAllJointsPositions(actualJointsPositions);
-  readAllJointsVelocityDPS(actualJointsVelocityDPS);
+  readAllJointsSpeedsDPS(actualJointsSpeedsDPS);
+  readAllJointsCurrents(actualJointsCurrents);
+}
+void LOOP_PRINT_CHANGED_STATS() {
+  LOOP_UPDATE_ACTUALS();
   printPositionsIfChanged(actualJointsPositions);
+}
+void LOOP_PRINT_GRAPH_STATS() {
+  LOOP_UPDATE_ACTUALS();
+  _printList(actualJointsPositions);
+  _printList(actualJointsSpeedsDPS);
+//  _printList(actualJointsCurrents);
+  Serial.println();
 }
 
 
 // ------- Set positions functions --------
 void setJointPosition(id idx, pos position) {
-  Serial.print("[SET POS][");
-  Serial.print(idx);
-  Serial.print("]: ");
-  Serial.println(position);
+  PRINT_SET("[SET POS][");
+  PRINT_SET(idx);
+  PRINT_SET("]: ");
+  PRINT_SETln(position);
   if (position < MIN_POS(idx - 1) || position > MAX_POS(idx - 1)) {
-    Serial.print("Failed to set position. Position for this point must be between ");
-    Serial.print(MIN_POS(idx-1));
-    Serial.print(" and ");
-    Serial.println(MAX_POS(idx-1));
+    PRINT_ERR("Failed to set position. Position for this point must be between ");
+    PRINT_ERR(MIN_POS(idx-1));
+    PRINT_ERR(" and ");
+    PRINT_ERRln(MAX_POS(idx-1));
     exit(ERR_SET_JOINT_POSITION);
   }
   bool result = dxl.setGoalPosition(idx, position, UNIT_DEGREE);
   if (result == false) {
-    Serial.print("Failed to set position ");
-    Serial.print(position);
-    Serial.print(" on joint ID: ");
-    Serial.println(idx);
+    PRINT_ERR("Failed to set position ");
+    PRINT_ERR(position);
+    PRINT_ERR(" on joint ID: ");
+    PRINT_ERRln(idx);
     exit(ERR_SET_JOINT_POSITION);
   }
 }
@@ -91,70 +122,70 @@ void setAllJointsPositions(pos* jointsPositions) {
   }
 }
 
-// ------- Set velocity functions --------
-void setJointVelocity(id idx, float percents) {
-  Serial.print("[SET VEL][");
-  Serial.print(idx);
-  Serial.print("]: ");
-  Serial.print(percents);
-  Serial.println("%");
+// ------- Set Speed functions --------
+void setJointSpeed(id idx, float percents) {
+  PRINT_SET("[SET VEL][");
+  PRINT_SET(idx);
+  PRINT_SET("]: ");
+  PRINT_SET(percents);
+  PRINT_SETln("%");
   bool result = dxl.setGoalVelocity(idx, percents, UNIT_PERCENT);
   if (result == false) {
-    Serial.print("Failed to set velocity ");
+    Serial.print("Failed to set Speed ");
     Serial.print(percents);
     Serial.print(" on joint ID: ");
     Serial.println(idx);
-    exit(ERR_SET_JOINT_VELOCITY);
+    exit(ERR_SET_JOINT_Speed);
   }
 }
-void setJointVelocityDPS(id idx, float dps) {
-  Serial.print("[SET VEL][");
-  Serial.print(idx);
-  Serial.print("]: ");
-  Serial.print(dps);
-  Serial.print(" DPS = ");
+void setJointSpeedDPS(id idx, float dps) {
+  PRINT_SET("[SET VEL][");
+  PRINT_SET(idx);
+  PRINT_SET("]: ");
+  PRINT_SET(dps);
+  PRINT_SET(" DPS = ");
   float rpm = dps / 6.0;
   if (rpm < MIN_RPM)
     rpm = MIN_RPM;
-  Serial.print(rpm);
-  Serial.print(" RPM");
-  Serial.println();
+  PRINT_SET(rpm);
+  PRINT_SET(" RPM");
+  PRINT_SETln();
   bool result = dxl.setGoalVelocity(idx, rpm, UNIT_RPM);
   if (result == false) {
-    Serial.print("Failed to set velocity DPS = ");
-    Serial.print(dps);
-    Serial.print(" RPM = ");
-    Serial.print(rpm);
-    Serial.print(" on joint ID: ");
-    Serial.println(idx);
-//    exit(ERR_SET_JOINT_VELOCITY);
+    PRINT_ERR("Failed to set Speed DPS = ");
+    PRINT_ERR(dps);
+    PRINT_ERR(" RPM = ");
+    PRINT_ERR(rpm);
+    PRINT_ERR(" on joint ID: ");
+    PRINT_ERRln(idx);
+//    exit(ERR_SET_JOINT_Speed);
   }
 }
 
-void setAllJointsVelocity(float* jointsVelocity) {
+void setAllJointsSpeeds(float* jointsSpeed) {
   FOR_JOINTS_ID(jointId) {
-    setJointVelocity(jointId, jointsVelocity[jointId - 1]);
+    setJointSpeed(jointId, jointsSpeed[jointId - 1]);
   }
 }
-void setAllJointsVelocityDPS(float* jointsVelocity) {
+void setAllJointsSpeedsDPS(float* jointsSpeed) {
   FOR_JOINTS_ID(jointId) {
-    setJointVelocityDPS(jointId, jointsVelocity[jointId - 1]);
+    setJointSpeedDPS(jointId, jointsSpeed[jointId - 1]);
   }
 }
 // ------- Work with torque functions --------
 void enable(id idx) {
   bool result = dxl.torqueOn(idx);
   if (result == false) {
-    Serial.print("Failed to enable joint ID: ");
-    Serial.println(idx);
+    PRINT_ERR("Failed to enable joint ID: ");
+    PRINT_ERRln(idx);
     exit(ERR_ENABLE_JOINT);
   }
 }
 void disable(id idx) {
   bool result = dxl.torqueOff(idx);
   if (result == false) {
-    Serial.print("Failed to disable joint ID: ");
-    Serial.println(idx);
+    PRINT_ERR("Failed to disable joint ID: ");
+    PRINT_ERRln(idx);
     exit(ERR_ENABLE_JOINT);
   }
 }
@@ -178,20 +209,20 @@ void readAllJointsPositions(pos* targetList) {
     targetList[jointId - 1] = jointPos;
   }
 }
-void readAllJointsVelocity(float* targetList) {
+void readAllJointsSpeeds(float* targetList) {
   FOR_JOINTS_ID(jointId) {
-    float jointVelocity = dxl.getPresentVelocity(jointId, UNIT_PERCENT);
-    targetList[jointId - 1] = jointVelocity;
+    float jointSpeed = dxl.getPresentVelocity(jointId, UNIT_PERCENT);
+    targetList[jointId - 1] = jointSpeed;
   }
 }
-void readAllJointsVelocityDPS(float* targetList) {
+void readAllJointsSpeedsDPS(float* targetList) {
   FOR_JOINTS_ID(jointId) {
-    const float rpmVelocity = dxl.getPresentVelocity(jointId, UNIT_RPM);
-    const float dpsVelocity = rpmVelocity * 6.0;
-    targetList[jointId - 1] = dpsVelocity;
+    const float rpmSpeed = dxl.getPresentVelocity(jointId, UNIT_RPM);
+    const float dpsSpeed = rpmSpeed * 6.0;
+    targetList[jointId - 1] = dpsSpeed;
   }
 }
-void readAllJointsCurrent(float* targetList) {
+void readAllJointsCurrents(float* targetList) {
   FOR_JOINTS_ID(jointId) {
     float jointCurrent = dxl.getPresentCurrent(jointId, UNIT_MILLI_AMPERE);
     targetList[jointId - 1] = jointCurrent;
@@ -200,24 +231,25 @@ void readAllJointsCurrent(float* targetList) {
 
 
 // ------- Print stats --------
-void _printList(const pos* list) {
-  FOR_JOINTS_IDX(i) {
-    Serial.print(list[i]);
-    Serial.print(" ");
-  }
-  Serial.println("");
-}
 void printPositions(const pos* list) {
   Serial.print("[POS](raw): ");
   _printList(list);
+  Serial.println();
 }
-void printVelocity(const pos* list) {
+void printSpeeds(const pos* list) {
   Serial.print("[VEL](%): ");
   _printList(list);
+  Serial.println();
 }
-void printCurrent(const pos* list) {
+void printSpeedsDPS(const pos* list) {
+  Serial.print("[VEL](DPS): ");
+  _printList(list);
+  Serial.println();
+}
+void printCurrents(const pos* list) {
   Serial.print("[CUR](mA): ");
   _printList(list);
+  Serial.println();
 }
 
 void printPositionsIfChanged(const pos* list) {
@@ -247,7 +279,7 @@ void printPositionsIfChanged(const pos* list) {
     return;
 
   // print positions and copy changed
-  Serial.print("[ POS ]: ");
+  Serial.print("[POS]: ");
   FOR_JOINTS_IDX(i) {
     if (prevPositions[i] != list[i]) {
       Serial.print("<");

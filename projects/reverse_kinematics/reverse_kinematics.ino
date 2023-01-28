@@ -42,7 +42,7 @@ unsigned nextTrajectoryPointIdx = 0;
 void loop() {
   LOOP_PRINT_STATS();
   
-  ENTER_SECTION {
+  KEYS_SECTION {
     ON_ANY_ENTER {
       Serial.println("PRESSED KEY ");
       Serial.println(nextTrajectoryPointIdx);

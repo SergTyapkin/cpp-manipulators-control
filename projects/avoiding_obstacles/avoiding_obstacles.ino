@@ -39,7 +39,7 @@ unsigned nextTrajectoryPointIdx = 0;
 void loop() {
   LOOP_PRINT_STATS();
   
-  ENTER_SECTION {
+  KEYS_SECTION {
     ON_ANY_ENTER {
       setAllJointsPositions(anglesTrajectory[nextTrajectoryPointIdx]);
 

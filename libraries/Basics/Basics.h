@@ -5,21 +5,29 @@
 #include <Dynamixel2Arduino.h>
 using namespace ControlTableItem;
 
+//L: 180.00
+//T1: 2.00
+//T2: 3.00
+//Tmax: 5.00
+//L1: 60.00
+//L2: 120.00
+
+//#define GRAPH_MODE
+#ifdef GRAPH_MODE
+  #define PRINT_SETUPS false
+  #define PRINT_SETS   false
+  #define PRINT_ERRS   false
+#else
+  #define PRINT_SETUPS true
+  #define PRINT_SETS   true
+  #define PRINT_ERRS   true
+#endif
+
 
 #define JOINTS_COUNT 6
 #define BAUDRATE  1000000
 
-#define ERR_INIT_DEVICE            -11
-#define ERR_INIT_JOINT             -12
-#define ERR_SET_JOINT_MODE         -13
-#define ERR_READ_JOINT_POS         -14
-#define ERR_SET_MAX_JOINT_VELOCITY -15
-#define ERR_SET_JOINT_POSITION     -16
-#define ERR_SET_JOINT_VELOCITY     -17
-#define ERR_ENABLE_JOINT           -18
-#define ERR_DISABLE_JOINT          -19
-
-#define MAX_JOINT_VELOCITY_PERCENT 5 // On first joint will be SPEED x2
+#define MAX_JOINT_SPEED_PERCENT 5 // On first joint will be SPEED x2
 
 #define MIN_RPM 1
 
@@ -46,8 +54,8 @@ const float minPoses[JOINTS_COUNT] = {
 const float maxPoses[JOINTS_COUNT] = {
     POS_MAX, // max 1
     283, // max 2
-    235, // max 3
-    259, // max 4
+    275, // max 3
+    253, // max 4
     245, // max 5
     193, // max 6
 };
@@ -70,17 +78,17 @@ const float maxPoses[JOINTS_COUNT] = {
     }                                  \
     if (__readedSymbol == 'Q') {       \
       FOR_JOINTS_ID(i)                 \
-        setJointVelocity(i, 7);        \
+        setJointSpeed(i, 7);        \
       static pos __null_pos_1[] = {135, 180, 155, 164, 180, 170}; \
       setAllJointsPositions(__null_pos_1);                        \
       delay(3000);                     \
       FOR_JOINTS_ID(i)                 \
-        setJointVelocity(i, 3);        \
+        setJointSpeed(i, 3);        \
       static pos __null_pos_2[] = {135, 155, 132, 164, 180, 170}; \
       setAllJointsPositions(__null_pos_2);                        \
       delay(500);                      \
       FOR_JOINTS_ID(i)                 \
-        setJointVelocity(i, 1);        \
+        setJointSpeed(i, 1);        \
       delay(2500);    \
       disableAll();   \
       exit(0);        \
@@ -88,24 +96,42 @@ const float maxPoses[JOINTS_COUNT] = {
   }
 #define ON_ENTER(number) if (__isEnterPressedNow && __entersPressed == number)
 #define ON_ANY_ENTER if (__isEnterPressedNow)
-//
+
+// --- Prints ---
+#define __PRINT_IFDEF(var, value) \
+  if(var)                         \
+    Serial.print(value);
+#define __PRINTln_IFDEF(var, value) \
+  if(var)                         \
+    Serial.println(value);
+#define PRINT_SET(value) __PRINT_IFDEF(PRINT_SETS, value)
+#define PRINT_ERR(value) __PRINT_IFDEF(PRINT_ERRS, value)
+#define PRINT_SETUP(value) __PRINT_IFDEF(PRINT_SETUPS, value)
+#define PRINT_SETln(value) __PRINTln_IFDEF(PRINT_SETS, value)
+#define PRINT_ERRln(value) __PRINTln_IFDEF(PRINT_ERRS, value)
+#define PRINT_SETUPln(value) __PRINTln_IFDEF(PRINT_SETUPS, value)
+
 // --- Global vars
 extern Dynamixel2Arduino dxl;
 extern pos actualJointsPositions[JOINTS_COUNT]; // READONLY!! Always contains current joints positions
-extern float actualJointsVelocityDPS[JOINTS_COUNT]; // READONLY!! Always contains current joints velocity
+extern float actualJointsSpeedDPS[JOINTS_COUNT]; // READONLY!! Always contains current joints Speeds
+extern float actualJointsCurrents[JOINTS_COUNT]; // READONLY!! Always contains current joints currents
+
+
 
 // ------- Default function --------
 void SETUP();
-void LOOP_PRINT_STATS();
+void LOOP_PRINT_GRAPH_STATS();
+void LOOP_PRINT_CHANGED_STATS();
 
 // ------- Set positions functions --------
 void setJointPosition(id idx, pos position);
 void setAllJointsPositions(pos* jointsPositions);
-// ------- Set velocity functions --------
-void setJointVelocity(id idx, float percents);
-void setJointVelocityDPS(id idx, float dps);
-void setAllJointsVelocity(float* jointsVelocity);
-void setAllJointsVelocityDPS(float* jointsVelocity);
+// ------- Set Speed functions --------
+void setJointSpeed(id idx, float percents);
+void setJointSpeedDPS(id idx, float dps);
+void setAllJointsSpeeds(float* jointsSpeed);
+void setAllJointsSpeedsDPS(float* jointsSpeed);
 // ------- Work with torque functions --------
 void enable(id idx);
 void disable(id idx);
@@ -115,15 +141,14 @@ void disableAll();
 
 // -------- Read stats --------
 void readAllJointsPositions(pos* targetList);
-void readAllJointsVelocity(float* targetList);
-void readAllJointsVelocityDPS(float* targetList);
-void readAllJointsCurrent(float* targetList);
+void readAllJointsSpeeds(float* targetList);
+void readAllJointsSpeedsDPS(float* targetList);
+void readAllJointsCurrents(float* targetList);
 // ------- Print stats --------
 void _printList(const pos* list);
 void printPositions(const pos* list);
-void printVelocity(const pos* list);
-void printCurrent(const pos* list);
-void printPositions(const pos* list);
+void printSpeeds(const pos* list);
+void printCurrents(const pos* list);
 
 void printPositionsIfChanged(const pos* list);
 

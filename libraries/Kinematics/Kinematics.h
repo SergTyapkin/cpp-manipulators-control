@@ -4,7 +4,6 @@
 #include "../Basics/Basics.h"
 #include <math.h>
 
-
 #define _L0   16.0
 #define _L1_1 20.0
 #define _L1_2 6.0
